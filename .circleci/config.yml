@@ -1,0 +1,50 @@
+version: 2.1
+
+jobs:
+  build_image:
+    docker:
+      - image: quay.io/crowdstrike/cloud-tools-image:latest
+    steps:
+      - checkout
+      #  - setup_remote_docker:
+      #      version: "20.10.11"
+      #      docker_layer_caching: true
+      #  - run:
+      #      name: Add some other check on yaml files
+      #      command: |
+      #        # run commands here
+
+      #  - run:
+      #      name: CrowdStrike Image Policy check
+      #      command: |
+      #        # get API token
+      #        FALCON_API_BEARER_TOKEN=$(curl \
+      #          --silent \
+      #          --header "Content-Type: application/x-www-form-urlencoded" \
+      #          --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
+      #          --request POST \
+      #          --url "https://$FALCON_CLOUD_API/oauth2/token" | \
+      #          python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+      #
+      #        RESPONSE=$(curl -s -X GET -H "authorization: Bearer ${BEARER_TOKEN}" \
+      #        https://api.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=<REPOSITORY>&#tag=<TAG>)
+      #        echo $RESPONSE | jq '.resources[0].deny'
+
+      - run:
+          name: Setup Kubernetes config
+          command: |
+            mkdir -p $HOME/.kube
+            echo -n KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
+            kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-2
+
+      - run:
+          name: Deploy the manifest file
+          command: |
+            kubectl apply -f my-application.yaml
+
+workflows:
+  build_app_and_image:
+    jobs:
+      - build_image:
+          context:
+            - cicd
