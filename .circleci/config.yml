@@ -31,11 +31,18 @@ jobs:
       #        echo $RESPONSE | jq '.resources[0].deny'
 
       - run:
+          name: Auth to google using service account
+          command: |
+            echo -n $GOOGLE_SERVICE_KEY > key.json
+            gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
+
+      - run:
           name: Setup Kubernetes config
           command: |
-            mkdir -p $HOME/.kube
-            echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
-            kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-3
+            gcloud container clusters get-credentials cviaud-gke-helm-test-3 --zone us-central1-c --project $GOOGLE_PROJECT
+          #mkdir -p $HOME/.kube
+          #echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
+          #kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-3
 
       - run:
           name: Deploy the manifest file
