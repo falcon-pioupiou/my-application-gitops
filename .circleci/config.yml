@@ -35,7 +35,7 @@ jobs:
           command: |
             mkdir -p $HOME/.kube
             echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
-            kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-2
+            kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-3
 
       - run:
           name: Deploy the manifest file
