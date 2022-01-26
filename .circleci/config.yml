@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build_image:
+  deploy_image:
     docker:
       - image: quay.io/crowdstrike/cloud-tools-image:latest
     steps:
@@ -34,7 +34,7 @@ jobs:
           name: Setup Kubernetes config
           command: |
             mkdir -p $HOME/.kube
-            echo -n KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
+            echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
             kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-2
 
       - run:
@@ -43,8 +43,8 @@ jobs:
             kubectl apply -f my-application.yaml
 
 workflows:
-  build_app_and_image:
+  deploy_application:
     jobs:
-      - build_image:
+      - deploy_image:
           context:
             - cicd
