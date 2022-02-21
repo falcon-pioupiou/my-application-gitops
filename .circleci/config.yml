@@ -61,7 +61,7 @@ jobs:
           name: Deploy the manifest file
           command: |
             IMAGE_VERSION=$(cat MY_APP_VERSION)
-            sed 's/MY_APP_VERSION/$IMAGE_VERSION/g' "my-application.yaml" > "generated-manifest.yml"
+            sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yml"
 
             kubectl apply -f generated-manifest.yml
 
