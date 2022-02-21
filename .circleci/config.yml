@@ -13,14 +13,13 @@ jobs:
       - run:
           name: CrowdStrike Image Policy check
           command: |
-            ls -l
             # get API token
             FALCON_API_BEARER_TOKEN=$(curl \
             --silent \
             --header "Content-Type: application/x-www-form-urlencoded" \
             --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
             --request POST \
-            --url "https://$FALCON_CLOUD_API/oauth2/token" | \
+            --url "https://api.crowdstrike.com/oauth2/token" | \
             python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
 
             IMAGE_VERSION=$(cat MY_APP_VERSION)
