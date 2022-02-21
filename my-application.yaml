@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: my-app
-          image: cvi.jfrog.io/image-scan/my-application:1.0-24
+          image: cvi.jfrog.io/image-scan/my-application:MY_APP_VERSION
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

@@ -22,8 +22,9 @@ jobs:
             --url "https://$FALCON_CLOUD_API/oauth2/token" | \
             python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
 
+            IMAGE_VERSION=$(cat MY_APP_VERSION)
             RESPONSE=$(curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
-                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=$1&tag=$2" |\
+                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=cvi.jfrog.io/image-scan/my-application&tag=$IMAGE_VERSION" |\
                         jq -r '.resources[0]' )
 
             echo $RESPONSE
@@ -59,7 +60,10 @@ jobs:
       - run:
           name: Deploy the manifest file
           command: |
-            kubectl apply -f my-application.yaml
+            IMAGE_VERSION=$(cat MY_APP_VERSION)
+            sed 's/MY_APP_VERSION/$IMAGE_VERSION/g' "my-application.yaml" > "generated-manifest.yml"
+
+            kubectl apply -f generated-manifest.yml
 
 workflows:
   deploy_application:
