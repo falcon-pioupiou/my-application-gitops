@@ -6,29 +6,41 @@ jobs:
       - image: quay.io/crowdstrike/cloud-tools-image:latest
     steps:
       - checkout
-      #  - setup_remote_docker:
-      #      version: "20.10.11"
-      #      docker_layer_caching: true
-      #  - run:
-      #      name: Add some other check on yaml files
-      #      command: |
-      #        # run commands here
+      - setup_remote_docker:
+          version: "20.10.11"
+          docker_layer_caching: true
 
-      #  - run:
-      #      name: CrowdStrike Image Policy check
-      #      command: |
-      #        # get API token
-      #        FALCON_API_BEARER_TOKEN=$(curl \
-      #          --silent \
-      #          --header "Content-Type: application/x-www-form-urlencoded" \
-      #          --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
-      #          --request POST \
-      #          --url "https://$FALCON_CLOUD_API/oauth2/token" | \
-      #          python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
-      #
-      #        RESPONSE=$(curl -s -X GET -H "authorization: Bearer ${BEARER_TOKEN}" \
-      #        https://api.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=<REPOSITORY>&#tag=<TAG>)
-      #        echo $RESPONSE | jq '.resources[0].deny'
+      - run:
+          name: CrowdStrike Image Policy check
+          command: |
+            # get API token
+            FALCON_API_BEARER_TOKEN=$(curl \
+            --silent \
+            --header "Content-Type: application/x-www-form-urlencoded" \
+            --data "client_id=${FALCON_CLIENT_ID}&client_secret=${FALCON_CLIENT_SECRET}" \
+            --request POST \
+            --url "https://$FALCON_CLOUD_API/oauth2/token" | \
+            python3 -c "import sys, json; print(json.load(sys.stdin)['access_token'])")
+
+            RESPONSE=$(curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
+                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=$1&tag=$2" |\
+                        jq -r '.resources[0]' )
+
+            echo $RESPONSE
+
+            DENY=$(echo $RESPONSE | jq -r '.deny')
+            ACTION=$(echo $RESPONSE | jq -r '.action')
+
+            echo $DENY
+            echo $ACTION
+
+            if [ $DENY == "true" ] && [ $ACTION == "block" ]; then
+                echo "IMAGE BLOCKED DUE TO SECURITY POLICY"
+                exit 1
+            else
+                echo "IMAGE OK TO BE DEPLOYED ACCORDING TO SECURITY POLICY"
+                exit 0
+            fi
 
       - run:
           name: Auth to google using service account
