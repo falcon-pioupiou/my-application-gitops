@@ -24,7 +24,7 @@ jobs:
 
             IMAGE_VERSION=$(cat MY_APP_VERSION)
             RESPONSE=$(curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
-                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=cvi.jfrog.io/image-scan/my-application&tag=$IMAGE_VERSION" |\
+                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=my-application&tag=$IMAGE_VERSION" |\
                         jq -r '.resources[0]' )
 
             DENY=$(echo $RESPONSE | jq -r '.deny')
@@ -37,6 +37,22 @@ jobs:
                 echo "IMAGE BLOCKED DUE TO SECURITY POLICY"
                 echo "${POLICY_NAME} - ${POLICY_DESCRIPTION}"
                 echo "============================================================"
+
+                echo "Vulnerabilities :"
+                curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
+                                "https://container-upload.us-1.crowdstrike.com/reports?repository=my-application&tag=$IMAGE_VERSION" |\
+                                jq -r '.Vulnerabilities[].Vulnerability | "\(.CVEID)\t\(.Product.PackageSource)\t\(.Details.exploited.status)\t\(.Details.severity)\t\(.Details.exploitability_score)"'
+                
+                echo "Malware :"
+                curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
+                                "https://container-upload.us-1.crowdstrike.com/reports?repository=my-application&tag=$IMAGE_VERSION" |\
+                                jq -r '.ELFBinaries[] | select(.Malicious == true) | "\(.Malicious) - \(.Permissions) : \(.Path)"'
+                
+                echo "Detections :"
+                curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
+                                "https://container-upload.us-1.crowdstrike.com/reports?repository=my-application&tag=$IMAGE_VERSION" |\
+                                jq -r '.Detections[].Detection | "\(.Severity) - \(.Type) - \(.Name) - \(.Title) - \(.Details.Match)"'
+
                 exit 1
             else
                 echo "IMAGE OK TO BE DEPLOYED ACCORDING TO IMAGE ASSESSMENT POLICY"
