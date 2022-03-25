@@ -27,43 +27,49 @@ jobs:
                         "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=cvi.jfrog.io/image-scan/my-application&tag=$IMAGE_VERSION" |\
                         jq -r '.resources[0]' )
 
-            echo $RESPONSE
+            #echo $RESPONSE
 
             DENY=$(echo $RESPONSE | jq -r '.deny')
             ACTION=$(echo $RESPONSE | jq -r '.action')
-
-            echo $DENY
-            echo $ACTION
+            POLICY_NAME=$(echo $RESPONSE | jq -r '.policy.name')
+            POLICY_DESCRIPTION=$(echo $RESPONSE | jq -r '.policy.description')
 
             if [ $DENY == "true" ] && [ $ACTION == "block" ]; then
                 echo "IMAGE BLOCKED DUE TO SECURITY POLICY"
+                echo "${POLICY_NAME} - ${POLICY_DESCRIPTION}"
                 exit 1
             else
-                echo "IMAGE OK TO BE DEPLOYED ACCORDING TO SECURITY POLICY"
+                echo "IMAGE OK TO BE DEPLOYED ACCORDING TO IMAGE ASSESSMENT POLICY"
                 exit 0
             fi
 
       - run:
           name: Auth to google using service account
           command: |
-            echo -n $GOOGLE_SERVICE_KEY > key.json
-            gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
+            echo "Auth to google using service account"
+            # echo -n $GOOGLE_SERVICE_KEY > key.json
+            # gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
 
       - run:
           name: Setup Kubernetes config
           command: |
-            gcloud container clusters get-credentials cviaud-gke-helm-test-3 --zone us-central1-c --project $GOOGLE_PROJECT
-          #mkdir -p $HOME/.kube
-          #echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
-          #kubectl config use-context gke_cviaud-gke_us-central1-c_cviaud-gke-helm-test-3
+            echo "Setup Kubernetes config"
+            # Get auth from the gcloud service account 
+            # gcloud container clusters get-credentials k8s-gke-helm-test-3 --zone us-central1-c --project $GOOGLE_PROJECT
+            
+            # Option 2 - inject a KUBE_CONFIG via a SECRET
+            # mkdir -p $HOME/.kube
+            # echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
+            # kubectl config use-context gke_k8s-gke_us-central1-c_k8s-gke-helm-test-3
 
       - run:
           name: Deploy the manifest file
           command: |
             IMAGE_VERSION=$(cat MY_APP_VERSION)
             sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yml"
-
-            kubectl apply -f generated-manifest.yml
+            cat generated-manifest.yaml
+            # deploy the file on the k8s cluster
+            # kubectl apply -f generated-manifest.yml
 
 workflows:
   deploy_application:
