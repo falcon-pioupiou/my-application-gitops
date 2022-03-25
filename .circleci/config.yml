@@ -27,16 +27,16 @@ jobs:
                         "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=cvi.jfrog.io/image-scan/my-application&tag=$IMAGE_VERSION" |\
                         jq -r '.resources[0]' )
 
-            #echo $RESPONSE
-
             DENY=$(echo $RESPONSE | jq -r '.deny')
             ACTION=$(echo $RESPONSE | jq -r '.action')
             POLICY_NAME=$(echo $RESPONSE | jq -r '.policy.name')
             POLICY_DESCRIPTION=$(echo $RESPONSE | jq -r '.policy.description')
 
-            if [ $DENY == "true" ] && [ $ACTION == "block" ]; then
+            if [[ "$DENY" == "true" && "$ACTION" == "block" ]]; then
+                echo "============================================================"
                 echo "IMAGE BLOCKED DUE TO SECURITY POLICY"
                 echo "${POLICY_NAME} - ${POLICY_DESCRIPTION}"
+                echo "============================================================"
                 exit 1
             else
                 echo "IMAGE OK TO BE DEPLOYED ACCORDING TO IMAGE ASSESSMENT POLICY"
