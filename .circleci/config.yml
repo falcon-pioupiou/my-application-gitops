@@ -97,8 +97,8 @@ jobs:
             # kubectl config use-context ...
 
             # Check if the secret regcred is in the kubernetes cluster
-            regcred=$(kubectl get secret regcred)
-            if [ $? -ne 0 ]; then
+            regcred=$(kubectl get secret regcred || echo "")
+            if [ -z $regcred ]; then
               echo "Creating the regcred secret for the app"
               kubectl create secret docker-registry regcred \
                       --docker-server=$JFROG_HOST \
