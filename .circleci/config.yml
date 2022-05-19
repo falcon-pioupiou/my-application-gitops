@@ -64,57 +64,76 @@ jobs:
           name: Auth to google using service account
           command: |
             echo "Auth to google using service account"
-            echo -n $GOOGLE_SERVICE_KEY > key.json
-            gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
-
+            DEPLOY=$(cat DEPLOY)
+            if [ $DEPLOY = "true" ]; then
+              echo -n $GOOGLE_SERVICE_KEY > key.json
+              gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
+            else
+              echo "DEPLOY=file => no deployment"
+            fi
 
       - run:
           name: Does GKE cluster is up and running?
           command: |
-            SERVER_NAME=$(gcloud container clusters  list --format='value(name)' --filter="name=$GOOGLE_STAGING_GKE")
-            if [ -z "$SERVER_NAME" ]; then
-              echo "Cluster doesn't exist creating it"
-              gcloud container clusters create $GOOGLE_STAGING_GKE \
+            DEPLOY=$(cat DEPLOY)
+            if [ $DEPLOY = "true" ]; then
+              SERVER_NAME=$(gcloud container clusters  list --format='value(name)' --filter="name=$GOOGLE_STAGING_GKE")
+              if [ -z "$SERVER_NAME" ]; then
+                echo "Cluster doesn't exist creating it"
+                gcloud container clusters create $GOOGLE_STAGING_GKE \
                      --region us-central1-c \
                      --workload-pool=$GOOGLE_PROJECT.svc.id.goog \
                      --labels $GOOGLE_ASSET_TAGS \
                      --machine-type "e2-standard-4" --image-type "UBUNTU_CONTAINERD" \
                      --num-nodes "2"
+              else
+                echo "Cluster already exist"
+              fi
             else
-              echo "Cluster already exist"
+              echo "DEPLOY=file => no deployment"
             fi
 
       - run:
           name: Setup Kubernetes config
           command: |
-            echo "Setup Kubernetes config"
-            # Get auth from the gcloud service account 
-            gcloud container clusters get-credentials $GOOGLE_STAGING_GKE --zone us-central1-c --project $GOOGLE_PROJECT
+            DEPLOY=$(cat DEPLOY)
+            if [ $DEPLOY = "true" ]; then
+              echo "Setup Kubernetes config"
+              # Get auth from the gcloud service account 
+              gcloud container clusters get-credentials $GOOGLE_STAGING_GKE --zone us-central1-c --project $GOOGLE_PROJECT
             
-            # Option 2 - inject a KUBE_CONFIG via a SECRET
-            # mkdir -p $HOME/.kube
-            # echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
-            # kubectl config use-context ...
+              # Option 2 - inject a KUBE_CONFIG via a SECRET
+              # mkdir -p $HOME/.kube
+              # echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
+              # kubectl config use-context ...
 
-            # Check if the secret regcred is in the kubernetes cluster
-            regcred=$(kubectl get secret regcred || echo "")
-            if [ -z $regcred ]; then
-              echo "Creating the regcred secret for the app"
-              kubectl create secret docker-registry regcred \
+              # Check if the secret regcred is in the kubernetes cluster
+              regcred=$(kubectl get secret regcred || echo "")
+              if [ -z $regcred ]; then
+                echo "Creating the regcred secret for the app"
+                kubectl create secret docker-registry regcred \
                       --docker-server=$JFROG_HOST \
                       --docker-username=$JFROG_USER_DEPLOY_NAME \
                       --docker-password=$JFROG_USER_DEPLOY_PASSWORD \
                       --docker-email=fake@fakeemail.com
+              fi
+            else
+              echo "DEPLOY=file => no deployment"
             fi
 
       - run:
           name: Deploy the manifest file
           command: |
-            IMAGE_VERSION=$(cat MY_APP_VERSION)
-            sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
-            cat generated-manifest.yaml
-            # deploy the file on the k8s cluster
-            kubectl apply -f generated-manifest.yaml
+            DEPLOY=$(cat DEPLOY)
+            if [ $DEPLOY = "true" ]; then
+              IMAGE_VERSION=$(cat MY_APP_VERSION)
+              sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
+              cat generated-manifest.yaml
+              # deploy the file on the k8s cluster
+              kubectl apply -f generated-manifest.yaml
+            else
+              echo "DEPLOY=file => no deployment"
+            fi
 
 workflows:
   deploy_application:
