@@ -24,7 +24,7 @@ jobs:
 
             IMAGE_VERSION=$(cat MY_APP_VERSION)
             RESPONSE=$(curl -s -X GET -H "Authorization: Bearer ${FALCON_API_BEARER_TOKEN}" \
-                        "https://container-upload.us-1.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=my-application&tag=$IMAGE_VERSION" |\
+                        "https://container-upload.$FALCON_CLOUD_REGION.crowdstrike.com/policy-checks?policy_type=image-prevention-policy&repository=my-application&tag=$IMAGE_VERSION" |\
                         jq -r '.resources[0]' )
 
             DENY=$(echo $RESPONSE | jq -r '.deny')
@@ -65,19 +65,19 @@ jobs:
           command: |
             echo "Auth to google using service account"
             # echo -n $GOOGLE_SERVICE_KEY > key.json
-            # gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
+            gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
 
       - run:
           name: Setup Kubernetes config
           command: |
             echo "Setup Kubernetes config"
             # Get auth from the gcloud service account 
-            # gcloud container clusters get-credentials k8s-gke-helm-test-3 --zone us-central1-c --project $GOOGLE_PROJECT
+            gcloud container clusters get-credentials $GOOGLE_STAGING_GKE --zone us-central1-c --project $GOOGLE_PROJECT
             
             # Option 2 - inject a KUBE_CONFIG via a SECRET
             # mkdir -p $HOME/.kube
             # echo -n $KUBE_CONFIG_BASE64 | base64 -d >$HOME/.kube/config
-            # kubectl config use-context gke_k8s-gke_us-central1-c_k8s-gke-helm-test-3
+            # kubectl config use-context ...
 
       - run:
           name: Deploy the manifest file
@@ -86,7 +86,7 @@ jobs:
             sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yml"
             cat generated-manifest.yaml
             # deploy the file on the k8s cluster
-            # kubectl apply -f generated-manifest.yml
+            kubectl apply -f generated-manifest.yml
 
 workflows:
   deploy_application:
