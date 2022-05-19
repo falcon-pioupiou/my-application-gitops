@@ -64,7 +64,7 @@ jobs:
           name: Auth to google using service account
           command: |
             echo "Auth to google using service account"
-            # echo -n $GOOGLE_SERVICE_KEY > key.json
+            echo -n $GOOGLE_SERVICE_KEY > key.json
             gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
 
       - run:
