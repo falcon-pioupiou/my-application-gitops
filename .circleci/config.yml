@@ -83,10 +83,10 @@ jobs:
           name: Deploy the manifest file
           command: |
             IMAGE_VERSION=$(cat MY_APP_VERSION)
-            sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yml"
+            sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
             cat generated-manifest.yaml
             # deploy the file on the k8s cluster
-            kubectl apply -f generated-manifest.yml
+            kubectl apply -f generated-manifest.yaml
 
 workflows:
   deploy_application:
