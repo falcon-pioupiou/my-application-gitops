@@ -65,7 +65,7 @@ jobs:
           command: |
             echo "Auth to google using service account"
             DEPLOY=$(cat DEPLOY)
-            if [ $DEPLOY = "true" ]; then
+            if [ $DEPLOY == "true" ]; then
               echo -n $GOOGLE_SERVICE_KEY > key.json
               gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
             else
@@ -76,7 +76,7 @@ jobs:
           name: Does GKE cluster is up and running?
           command: |
             DEPLOY=$(cat DEPLOY)
-            if [ $DEPLOY = "true" ]; then
+            if [ $DEPLOY == "true" ]; then
               SERVER_NAME=$(gcloud container clusters  list --format='value(name)' --filter="name=$GOOGLE_STAGING_GKE")
               if [ -z "$SERVER_NAME" ]; then
                 echo "Cluster doesn't exist creating it"
@@ -97,7 +97,7 @@ jobs:
           name: Setup Kubernetes config
           command: |
             DEPLOY=$(cat DEPLOY)
-            if [ $DEPLOY = "true" ]; then
+            if [ $DEPLOY == "true" ]; then
               echo "Setup Kubernetes config"
               # Get auth from the gcloud service account 
               gcloud container clusters get-credentials $GOOGLE_STAGING_GKE --zone us-central1-c --project $GOOGLE_PROJECT
@@ -125,7 +125,7 @@ jobs:
           name: Deploy the manifest file
           command: |
             DEPLOY=$(cat DEPLOY)
-            if [ $DEPLOY = "true" ]; then
+            if [ $DEPLOY == "true" ]; then
               IMAGE_VERSION=$(cat MY_APP_VERSION)
               sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
               cat generated-manifest.yaml
