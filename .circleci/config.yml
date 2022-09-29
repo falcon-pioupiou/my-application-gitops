@@ -131,6 +131,11 @@ jobs:
               cat generated-manifest.yaml
               # deploy the file on the k8s cluster
               kubectl apply -f generated-manifest.yaml
+              EXPOSE_APP=$(cat EXPOSE_APP_TO_WORLD)
+              if [ $EXPOSE_APP == "true" ]; then
+                echo "deploying the service to expose the app"
+                kubectl apply -f my-application-service.yaml
+              fi
             else
               echo "DEPLOY=file => no deployment"
             fi
