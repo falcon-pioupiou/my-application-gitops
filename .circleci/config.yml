@@ -6,10 +6,7 @@ jobs:
       - image: quay.io/crowdstrike/cloud-tools-image:latest
     steps:
       - checkout
-      #- setup_remote_docker:
-      #    version: "20.10.11"
-      #    docker_layer_caching: true
-
+      
       - run:
           name: CrowdStrike Image Policy check
           command: |
@@ -72,8 +69,8 @@ jobs:
               # Check if the secret regcred is in the kubernetes cluster
               regcred=$(kubectl get secret regcred || echo "")
               if [ -z $regcred ]; then
-                echo "Creating the regcred secret for the app"
-                kubectl create secret docker-registry regcred \
+                echo "Creating the jfrog_registry_cred secret for the app"
+                kubectl create secret docker-registry jfrog_registry_cred \
                       --docker-server=$JFROG_HOST \
                       --docker-username=$JFROG_USER_DEPLOY_NAME \
                       --docker-password=$JFROG_USER_DEPLOY_PASSWORD \
@@ -88,14 +85,17 @@ jobs:
           command: |
             DEPLOY=$(cat DEPLOY)
             if [ $DEPLOY == "true" ]; then
+              echo "deploying the application manifest"
               IMAGE_VERSION=$(cat MY_APP_VERSION)
               sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
               cat generated-manifest.yaml
               # deploy the file on the k8s cluster
               kubectl apply -f generated-manifest.yaml
+
               EXPOSE_APP=$(cat EXPOSE_APP_TO_WORLD)
               if [ $EXPOSE_APP == "true" ]; then
                 echo "deploying the service to expose the app"
+                cat my-application-service.yaml
                 kubectl apply -f my-application-service.yaml
               fi
             else

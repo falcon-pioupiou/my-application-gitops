@@ -21,4 +21,4 @@ spec:
             - containerPort: 8080
               name: web
       imagePullSecrets:
-        - name: regcred
+        - name: jfrog_registry_cred
