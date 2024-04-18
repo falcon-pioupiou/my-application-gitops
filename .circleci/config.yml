@@ -28,7 +28,7 @@ jobs:
               echo -n $GOOGLE_SERVICE_KEY > key.json
               gcloud auth activate-service-account $GOOGLE_SERVICE_ACCOUNT_NAME --key-file=key.json --project=$GOOGLE_PROJECT
             else
-              echo "DEPLOY=file => no deployment"
+              echo "DEPLOY=false => no deployment"
             fi
 
       - run:
@@ -49,7 +49,7 @@ jobs:
                 echo "Cluster already exist"
               fi
             else
-              echo "DEPLOY=file => no deployment"
+              echo "DEPLOY=false => no deployment"
             fi
 
       - run:
@@ -77,7 +77,7 @@ jobs:
                       --docker-email=fake@fakeemail.com
               fi
             else
-              echo "DEPLOY=file => no deployment"
+              echo "DEPLOY=false => so no deployment"
             fi
 
       - run:
@@ -89,6 +89,7 @@ jobs:
               IMAGE_VERSION=$(cat MY_APP_VERSION)
               sed "s/MY_APP_VERSION/$IMAGE_VERSION/g" "my-application.yaml" > "generated-manifest.yaml"
               cat generated-manifest.yaml
+              
               # deploy the file on the k8s cluster
               kubectl apply -f generated-manifest.yaml
 
@@ -99,12 +100,18 @@ jobs:
                 kubectl apply -f my-application-service.yaml
               fi
             else
-              echo "DEPLOY=file => no deployment"
+              cat generated-manifest.yaml
+              echo "DEPLOY=false => no deployment"
             fi
 
 workflows:
   deploy_application:
     jobs:
       - deploy_image:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
           context:
             - cicd
